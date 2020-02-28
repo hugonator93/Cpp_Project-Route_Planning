@@ -41,7 +41,7 @@ void RoutePlanner::AddNeighbors(RouteModel::Node *current_node)
 	{
 		node->parent = current_node;
 		node->h_value = CalculateHValue(node);
-		node->g_value = start_node->distance(*node);
+		node->g_value = current_node->g_value + node->distance(*current_node);
 		open_list.push_back(node);
 		node->visited = true;
 	}
@@ -58,7 +58,11 @@ void RoutePlanner::AddNeighbors(RouteModel::Node *current_node)
 
 RouteModel::Node *RoutePlanner::NextNode()
 {
+	std::sort(open_list.begin(), open_list.end(), CompareNodes);
+	RouteModel::Node * lowest = open_list.back();
+	open_list.pop_back();
 
+	return lowest;
 }
 
 
@@ -76,6 +80,15 @@ std::vector<RouteModel::Node> RoutePlanner::ConstructFinalPath(RouteModel::Node 
     std::vector<RouteModel::Node> path_found;
 
     // TODO: Implement your solution here.
+    while(current_node != start_node)
+    {
+    	distance += current_node->distance(*(current_node->parent));
+    	path_found.insert(path_found.begin(), *current_node);
+    	current_node = current_node->parent;
+
+    }
+    //add start_node manually , since it will be skipped in while
+    path_found.insert(path_found.begin(), *RoutePlanner::start_node);
 
     distance *= m_Model.MetricScale(); // Multiply the distance by the scale of the map to get meters.
     return path_found;
@@ -90,9 +103,28 @@ std::vector<RouteModel::Node> RoutePlanner::ConstructFinalPath(RouteModel::Node 
 // - When the search has reached the end_node, use the ConstructFinalPath method to return the final path that was found.
 // - Store the final path in the m_Model.path attribute before the method exits. This path will then be displayed on the map tile.
 
-void RoutePlanner::AStarSearch() {
+void RoutePlanner::AStarSearch()
+{
     RouteModel::Node *current_node = nullptr;
-
     // TODO: Implement your solution here.
+    current_node = start_node;
+    current_node->visited = true;
+    while(current_node != end_node)
+    {
+		AddNeighbors(current_node);
+		current_node = NextNode();
+    }
+
+
+    m_Model.path = ConstructFinalPath(current_node);
 
 }
+
+bool RoutePlanner::CompareNodes(const RouteModel::Node * node1, const RouteModel::Node * node2)
+{
+	int fValueN1 = node1->g_value + node1->h_value;
+	int fValueN2 = node2->g_value + node2->h_value;
+
+	return fValueN1 > fValueN2;
+}
+
