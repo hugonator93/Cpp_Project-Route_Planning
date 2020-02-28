@@ -41,9 +41,10 @@ void RoutePlanner::AddNeighbors(RouteModel::Node *current_node)
 	{
 		node->parent = current_node;
 		node->h_value = CalculateHValue(node);
+		//New g-value = parents accumulated g-value + nodes distance to parent
 		node->g_value = current_node->g_value + node->distance(*current_node);
-		open_list.push_back(node);
 		node->visited = true;
+		open_list.push_back(node);
 	}
 
 }
@@ -83,6 +84,7 @@ std::vector<RouteModel::Node> RoutePlanner::ConstructFinalPath(RouteModel::Node 
     while(current_node != start_node)
     {
     	distance += current_node->distance(*(current_node->parent));
+    	//insert new node at the beginning
     	path_found.insert(path_found.begin(), *current_node);
     	current_node = current_node->parent;
 
@@ -111,19 +113,21 @@ void RoutePlanner::AStarSearch()
     current_node->visited = true;
     while(current_node != end_node)
     {
-		AddNeighbors(current_node);
-		current_node = NextNode();
+    	AddNeighbors(current_node);
+    	current_node = NextNode();
     }
-
 
     m_Model.path = ConstructFinalPath(current_node);
 
 }
 
+/*
+ * Function for comparing the nodes f-values. Returns true if first nodes f-value is greater.
+ */
 bool RoutePlanner::CompareNodes(const RouteModel::Node * node1, const RouteModel::Node * node2)
 {
-	int fValueN1 = node1->g_value + node1->h_value;
-	int fValueN2 = node2->g_value + node2->h_value;
+	float fValueN1 = node1->g_value + node1->h_value;
+	float fValueN2 = node2->g_value + node2->h_value;
 
 	return fValueN1 > fValueN2;
 }
